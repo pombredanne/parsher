@@ -1,8 +1,10 @@
+import os
 import unittest
 from parsher import BashScript
 
 class TestMultipleTokens(unittest.TestCase):
     def prep(self, string):
+        self.maxDiff = None
         path = './test_data'
         f = open(path, 'w')
         f.write(string)
@@ -53,6 +55,22 @@ class TestMultipleTokens(unittest.TestCase):
         bashScript = self.prep(string)
         self.assertEquals([['VAR1', 'VAL1'], ['VAR2', 'VAL2'], ['VAR3', 'VAL3']], bashScript.vars)
         self.assertEquals(['export', 'export', 'export', 'SomeCommand'], bashScript.commands)
+
+    def test_spaces_in_quoted_vars(self):
+        string = 'export MAVEN_ARGS="-Dgpg.skip=true ' + \
+                                    '-Dmaven.javadoc.skip=true ' + \
+                                    '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
+                                    '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots" ' +\
+                 'export SOME_ENV_VAR="SOME_QUOTED_VAL" ' + \
+                 'someCommand'
+        bashScript = self.prep(string)
+        self.assertEquals([['MAVEN_ARGS', '"-Dgpg.skip=true ' + \
+                                          '-Dmaven.javadoc.skip=true ' + \
+                                          '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
+                                          '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots"'],
+                           ['SOME_ENV_VAR', '"SOME_QUOTED_VAL"']], bashScript.vars)
+
+        self.assertEquals(['export', 'export', 'someCommand'], bashScript.commands)
 
 
 
