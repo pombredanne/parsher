@@ -37,7 +37,10 @@ class BashScript:
                 # Handle States
 
                 elif self.commented:
-                    pass
+                    if c == '\n':
+                        self.commented = False
+                    else:
+                        pass
 
                 elif self.quoted:
                     if c == self.quoted_type:
@@ -50,17 +53,19 @@ class BashScript:
                     else:
                         self.segment_so_far += c
 
-                elif self.in_variable_value:
-                    if c in WHITE_SPACE_TYPES:
-                        self.done(c)
-                    else:
-                        self.segment_so_far += c
-
                 # STATE CHANGES
                 elif c in QUOTE_TYPES:
                     self.quoted = True
                     self.quoted_type = c
                     self.segment_so_far += c
+
+                elif self.in_variable_value:
+                    if c in WHITE_SPACE_TYPES and not self.quoted:
+                        self.done(c)
+
+                        self.segment_so_far += c
+                elif c == '#':
+                    self.commented = True
 
                 # found variable assignment
                 elif c == '=' and not self.in_variable_value:
