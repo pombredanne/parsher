@@ -1,2 +1,9 @@
 */*.pyc
 test_data
+.Python
+lib/*
+include/*
+bin/*
+*egg*
+*/*.pyc
+*.pyc

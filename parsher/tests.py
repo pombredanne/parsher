@@ -1,8 +1,9 @@
 import os
 import unittest
 from parsher import BashScript
+import sys
 
-class TestMultipleTokens(unittest.TestCase):
+class test_all(unittest.TestCase):
     def prep(self, string):
         self.maxDiff = None
         path = './test_data'
@@ -72,9 +73,20 @@ class TestMultipleTokens(unittest.TestCase):
 
         self.assertEquals(['export', 'export', 'someCommand'], bashScript.commands)
 
-
+    # @unittest.skipUnless(sys.argv[1], "must pass argument to script dir")
+    # def test_dir_of_scripts(self):
+    #     for script_name in os.listdir(sys.argv[1]):
+    #         print script_name.strip()
+    #         f = open(sys.argv[1] + script_name.strip())
+    #         mega_str = '\n'.join(f.readlines())
+    #         f.close()
+    #         bashScript = self.prep(mega_str)
+    #         for each in bashScript.vars:
+    #             print '\tvar\t' + str(each)
+    #         for each in bashScript.commands:
+    #             print '\tcommand\t' + each
 
 if __name__ == '__main__':
-        unittest.main()
+    unittest.main()
 
 
