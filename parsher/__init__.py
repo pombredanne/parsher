@@ -1,12 +1,7 @@
-import re
-
-VALID_VARIABLE_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 QUOTE_TYPES = '\'"'
 NEWLINE_CHARS = '\n;'
 REGULAR_WHITESPACE = '\t '
 WHITE_SPACE_TYPES = REGULAR_WHITESPACE + NEWLINE_CHARS
-
-
 
 class BashScript:
     def __init__(self, path):
@@ -29,13 +24,11 @@ class BashScript:
                     c = f.read(1)
                 else:
                     c = self.bufferedChars.pop(0)
-                # end of file
                 if not c:
                     self.done(c)
                     break
 
                 # Handle States
-
                 elif self.commented:
                     if c == '\n':
                         self.commented = False
@@ -54,16 +47,25 @@ class BashScript:
                         self.segment_so_far += c
 
                 # STATE CHANGES
-                elif c in QUOTE_TYPES:
+                elif c in QUOTE_TYPES and not self.quoted:
                     self.quoted = True
                     self.quoted_type = c
                     self.segment_so_far += c
 
-                elif self.in_variable_value:
-                    if c in WHITE_SPACE_TYPES and not self.quoted:
-                        self.done(c)
+                elif c in WHITE_SPACE_TYPES and not self.quoted and self.in_variable_value:
+                    # we want to only split on variables... commands should be strung together more
+                    look_ahead_1 = f.read(1)
+                    if look_ahead_1 == '\\':
+                        look_ahead_2 = f.read(2)
+                        if look_ahead_2 == '\n':
+                            pass
+                    else:
+                        self.bufferedChars.append(look_ahead_1)
 
-                        self.segment_so_far += c
+                    self.segment_so_far += c
+                    self.done(c)
+
+
                 elif c == '#':
                     self.commented = True
 
@@ -73,18 +75,23 @@ class BashScript:
                     self.in_variable_value = True
                     identifier_assignment, previous_command = self.handle_previous_commands(c)
                     if previous_command:
-                        self.commands += [previous_command.strip(WHITE_SPACE_TYPES)]
+                        if previous_command.strip(WHITE_SPACE_TYPES):
+                            self.commands += [previous_command.strip(WHITE_SPACE_TYPES)]
                     self.segment_so_far = identifier_assignment
 
                 elif c in WHITE_SPACE_TYPES and not self.quoted and not self.in_variable_value:
                     # backslash newline at end of line
                     look_ahead_1 = f.read(1)
                     # we see an escaped char in front...
+
                     if look_ahead_1 == '\\':
+                        print 'lookahead 1 hit'
                         look_ahead_2 = f.read(1)
                         if look_ahead_2 in '\n':
+                            print 'lookahead 2 hit'
                             # ok this is the pattern "blah\s\\n"
                             # drop all 3 chars on the floor, we don't need to keep them
+                            self.segment_so_far += c
                             pass
                         else:
                             # we found a pattern "blah \c" odd, but ok ...
@@ -109,18 +116,22 @@ class BashScript:
     def done(self, c):
         # variable assignment on this
         if '=' in self.segment_so_far and self.in_variable_value:
-            self.vars += [self.segment_so_far.split('=', 1)]
+            var_name = self.segment_so_far.split('=', 1)[0]
+            var_value = self.segment_so_far.split('=', 1)[1].strip(WHITE_SPACE_TYPES)
+            self.vars += [[var_name, var_value]]
             self.in_variable_value = False
             self.segment_so_far = ''
         # end of a command
         elif not self.quoted and not self.in_variable_value:
-            if self.segment_so_far:
-                self.commands += [self.segment_so_far.strip(WHITE_SPACE_TYPES)]
+            possible_command = self.segment_so_far.strip(WHITE_SPACE_TYPES)
+            if possible_command:
+                self.commands += [possible_command]
             self.segment_so_far = ''
         # done with file
         elif not c:
-            if self.segment_so_far:
-                self.commands += [self.segment_so_far.strip(WHITE_SPACE_TYPES)]
+            possible_command = self.segment_so_far.strip(WHITE_SPACE_TYPES)
+            if possible_command:
+                self.commands += [possible_command]
             self.segment_so_far = ''
 
     def handle_previous_commands(self, c):
@@ -147,17 +158,3 @@ def str_reverse(string):
         arr += [each]
     arr.reverse()
     return ''.join(arr)
-
-
-
-
-
-if __name__ == '__main__':
-
-    bf = BashScript('./test_data')
-    print ''
-    print 'vars'
-    for each in bf.vars:
-        print each[0] + ' = ' + each[1]
-
-    print 'cmds' + str(bf.commands)

@@ -62,29 +62,23 @@ class test_all(unittest.TestCase):
                                     '-Dmaven.javadoc.skip=true ' + \
                                     '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
                                     '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots" ' +\
-                 'export SOME_ENV_VAR="SOME_QUOTED_VAL" ' + \
+                 'export SOME_ENV_VAR="SOME QUOTED VAL" ' + \
                  'someCommand'
         bashScript = self.prep(string)
         self.assertEquals([['MAVEN_ARGS', '"-Dgpg.skip=true ' + \
                                           '-Dmaven.javadoc.skip=true ' + \
                                           '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
                                           '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots"'],
-                           ['SOME_ENV_VAR', '"SOME_QUOTED_VAL"']], bashScript.vars)
+                           ['SOME_ENV_VAR', '"SOME QUOTED VAL"']], bashScript.vars)
 
         self.assertEquals(['export', 'export', 'someCommand'], bashScript.commands)
 
-    # @unittest.skipUnless(sys.argv[1], "must pass argument to script dir")
-    # def test_dir_of_scripts(self):
-    #     for script_name in os.listdir(sys.argv[1]):
-    #         print script_name.strip()
-    #         f = open(sys.argv[1] + script_name.strip())
-    #         mega_str = '\n'.join(f.readlines())
-    #         f.close()
-    #         bashScript = self.prep(mega_str)
-    #         for each in bashScript.vars:
-    #             print '\tvar\t' + str(each)
-    #         for each in bashScript.commands:
-    #             print '\tcommand\t' + each
+    def test_escaped_newlines(self):
+        string = 'VAR=VALUE \\\n somecommand'
+        bashScript = self.prep(string)
+        self.assertEquals([['VAR','VALUE']], bashScript.vars)
+        self.assertEquals(['somecommand'], bashScript.commands)
+
 
 if __name__ == '__main__':
     unittest.main()
