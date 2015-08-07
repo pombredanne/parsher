@@ -31,13 +31,13 @@ class test_all(unittest.TestCase):
         string = "export VAR=VALUE"
         bashScript = self.prep(string)
         self.assertEquals([['VAR', 'VALUE']], bashScript.vars)
-        self.assertEquals('export', bashScript.commands[0])
+        self.assertEquals([], bashScript.commands)
 
     def test_variable_export_multiple(self):
         string = "export VAR1=VAL1\nexport VAR2=VAL2\nexport VAR3=VAL3"
         bashScript = self.prep(string)
         self.assertEquals([['VAR1', 'VAL1'], ['VAR2', 'VAL2'], ['VAR3', 'VAL3']], bashScript.vars)
-        self.assertEquals(['export', 'export', 'export'], bashScript.commands)
+        self.assertEquals([], bashScript.commands)
 
     def test_variable_export_mutliple_with_command(self):
         string = "export VAR1=VAL1\nexport VAR2=VAL2\nexport VAR3=VAL3\nSomeCommand"
@@ -55,7 +55,7 @@ class test_all(unittest.TestCase):
         string = "export VAR1=VAL1;; export VAR2=VAL2;\n\nexport VAR3=VAL3;SomeCommand"
         bashScript = self.prep(string)
         self.assertEquals([['VAR1', 'VAL1'], ['VAR2', 'VAL2'], ['VAR3', 'VAL3']], bashScript.vars)
-        self.assertEquals(['export', 'export', 'export', 'SomeCommand'], bashScript.commands)
+        self.assertEquals(['SomeCommand'], bashScript.commands)
 
     def test_spaces_in_quoted_vars(self):
         string = 'export MAVEN_ARGS="-Dgpg.skip=true ' + \
@@ -71,7 +71,7 @@ class test_all(unittest.TestCase):
                                           '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots"'],
                            ['SOME_ENV_VAR', '"SOME QUOTED VAL"']], bashScript.vars)
 
-        self.assertEquals(['export', 'export', 'someCommand'], bashScript.commands)
+        self.assertEquals(['someCommand'], bashScript.commands)
 
     def test_escaped_newlines(self):
         string = 'VAR=VALUE \\\n somecommand'

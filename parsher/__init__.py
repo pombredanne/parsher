@@ -4,8 +4,11 @@ REGULAR_WHITESPACE = '\t '
 WHITE_SPACE_TYPES = REGULAR_WHITESPACE + NEWLINE_CHARS
 
 class BashScript:
-    def __init__(self, path):
-        self.file_path = path
+    def __init__(self, path_or_file):
+        if hasattr(path_or_file, 'read'):
+            self.file = path_or_file
+        else:
+            self.file = open(path_or_file, 'r')
         self.vars = []
         self.commands = []
         self.bufferedChars = []
@@ -16,8 +19,14 @@ class BashScript:
         self.commented = False
         self.parse()
 
+    def add_command(self, cmd):
+        stripped = cmd.strip(WHITE_SPACE_TYPES)
+        if not stripped == "export":
+            self.commands += [stripped]
+
+
     def parse(self):
-        with open(self.file_path) as f:
+        with self.file as f:
             while True:
                 # handle various look ahead(s) that we need
                 if not self.bufferedChars:
@@ -76,7 +85,7 @@ class BashScript:
                     identifier_assignment, previous_command = self.handle_previous_commands(c)
                     if previous_command:
                         if previous_command.strip(WHITE_SPACE_TYPES):
-                            self.commands += [previous_command.strip(WHITE_SPACE_TYPES)]
+                            self.add_command(previous_command)
                     self.segment_so_far = identifier_assignment
 
                 elif c in WHITE_SPACE_TYPES and not self.quoted and not self.in_variable_value:
@@ -125,13 +134,13 @@ class BashScript:
         elif not self.quoted and not self.in_variable_value:
             possible_command = self.segment_so_far.strip(WHITE_SPACE_TYPES)
             if possible_command:
-                self.commands += [possible_command]
+                self.add_command(possible_command)
             self.segment_so_far = ''
         # done with file
         elif not c:
             possible_command = self.segment_so_far.strip(WHITE_SPACE_TYPES)
             if possible_command:
-                self.commands += [possible_command]
+                self.add_command(possible_command)
             self.segment_so_far = ''
 
     def handle_previous_commands(self, c):
