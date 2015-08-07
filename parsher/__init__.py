@@ -1,3 +1,5 @@
+import logging
+
 QUOTE_TYPES = '\'"'
 NEWLINE_CHARS = '\n;'
 REGULAR_WHITESPACE = '\t '
@@ -18,6 +20,7 @@ class BashScript:
         self.segment_so_far = ''
         self.commented = False
         self.parse()
+        logging.basicConfig()
 
     def add_command(self, cmd):
         stripped = cmd.strip(WHITE_SPACE_TYPES)
@@ -94,10 +97,10 @@ class BashScript:
                     # we see an escaped char in front...
 
                     if look_ahead_1 == '\\':
-                        print 'lookahead 1 hit'
+                        logging.debug('lookahead 1 hit')
                         look_ahead_2 = f.read(1)
                         if look_ahead_2 in '\n':
-                            print 'lookahead 2 hit'
+                            logging.debug('lookahead 2 hit')
                             # ok this is the pattern "blah\s\\n"
                             # drop all 3 chars on the floor, we don't need to keep them
                             self.segment_so_far += c
