@@ -1,7 +1,7 @@
 import os
 import unittest
+
 from parsher import BashScript
-import sys
 
 
 class test_all(unittest.TestCase):

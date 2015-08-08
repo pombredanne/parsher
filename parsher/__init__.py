@@ -92,7 +92,6 @@ class BashScript:
                     self.segment_so_far += c
                     self.done(c)
 
-
                 elif c == '#':
                     self.commented = True
 
