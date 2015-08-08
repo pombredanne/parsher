@@ -5,6 +5,7 @@ NEWLINE_CHARS = '\n;'
 REGULAR_WHITESPACE = '\t '
 WHITE_SPACE_TYPES = REGULAR_WHITESPACE + NEWLINE_CHARS
 
+
 class BashScript:
     def __init__(self, path_or_file):
         if hasattr(path_or_file, 'read'):
@@ -19,6 +20,7 @@ class BashScript:
         self.in_variable_value = False
         self.segment_so_far = ''
         self.commented = False
+        self.in_function = False
         self.parse()
         logging.basicConfig()
 
@@ -26,7 +28,6 @@ class BashScript:
         stripped = cmd.strip(WHITE_SPACE_TYPES)
         if not stripped == "export":
             self.commands += [stripped]
-
 
     def parse(self):
         with self.file as f:
@@ -58,10 +59,24 @@ class BashScript:
                     else:
                         self.segment_so_far += c
 
+                elif self.in_function:
+                    print self.segment_so_far
+                    if c == '}':
+                        self.segment_so_far += c
+                        self.commands += [self.segment_so_far]
+                        self.segment_so_far = ''
+                        self.in_function = False
+                    else:
+                        self.segment_so_far += c
+
                 # STATE CHANGES
                 elif c in QUOTE_TYPES and not self.quoted:
                     self.quoted = True
                     self.quoted_type = c
+                    self.segment_so_far += c
+
+                elif c == '{':
+                    self.in_function = True
                     self.segment_so_far += c
 
                 elif c in WHITE_SPACE_TYPES and not self.quoted and self.in_variable_value:
@@ -158,7 +173,7 @@ class BashScript:
                 result += revc
             elif not am_quoted and revc in WHITE_SPACE_TYPES:
                 #      the actual var name   the command preceding that
-                return str_reverse(result), str_reverse(reversed_segment[index+1:])
+                return str_reverse(result), str_reverse(reversed_segment[index + 1:])
             else:
                 result += revc
         return str_reverse(result), None

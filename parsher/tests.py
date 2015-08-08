@@ -3,6 +3,7 @@ import unittest
 from parsher import BashScript
 import sys
 
+
 class test_all(unittest.TestCase):
     def prep(self, string):
         self.maxDiff = None
@@ -59,16 +60,16 @@ class test_all(unittest.TestCase):
 
     def test_spaces_in_quoted_vars(self):
         string = 'export MAVEN_ARGS="-Dgpg.skip=true ' + \
-                                    '-Dmaven.javadoc.skip=true ' + \
-                                    '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
-                                    '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots" ' +\
+                 '-Dmaven.javadoc.skip=true ' + \
+                 '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
+                 '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots" ' + \
                  'export SOME_ENV_VAR="SOME QUOTED VAL" ' + \
                  'someCommand'
         bashScript = self.prep(string)
         self.assertEquals([['MAVEN_ARGS', '"-Dgpg.skip=true ' + \
-                                          '-Dmaven.javadoc.skip=true ' + \
-                                          '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
-                                          '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots"'],
+                            '-Dmaven.javadoc.skip=true ' + \
+                            '-DaltSnapshotDeploymentRepository=SomeCompany-SomeNexus::default::https://this.was.a/url/to/nexus/snapshots ' + \
+                            '-DaltDeploymentRepository=SomeCompany-Nexus::default::https://another.nexus.url/nexus/content/repositories/snapshots"'],
                            ['SOME_ENV_VAR', '"SOME QUOTED VAL"']], bashScript.vars)
 
         self.assertEquals(['someCommand'], bashScript.commands)
@@ -76,11 +77,15 @@ class test_all(unittest.TestCase):
     def test_escaped_newlines(self):
         string = 'VAR=VALUE \\\n somecommand'
         bashScript = self.prep(string)
-        self.assertEquals([['VAR','VALUE']], bashScript.vars)
+        self.assertEquals([['VAR', 'VALUE']], bashScript.vars)
         self.assertEquals(['somecommand'], bashScript.commands)
+
+    def test_inside_function(self):
+        string = 'somefun () {\n var="quoted_value"\n} \nVAR2=VALUE'
+        bashScript = self.prep(string)
+        self.assertEquals([["VAR2","VALUE"]], bashScript.vars)
+        self.assertEquals(['somefun () {\n var="quoted_value"\n}'], bashScript.commands)
 
 
 if __name__ == '__main__':
     unittest.main()
-
-
