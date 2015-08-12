@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='parsher',
-        version='0.1.)',
+        version='0.1.0',
         description='Parsher, a python module to parse bash scripts',
         author='Jonathan W Goodwin',
         url='https://github.com/jonathanwgoodwin/parsher',
