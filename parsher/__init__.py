@@ -22,7 +22,7 @@ class BashScript:
         self.commented = False
         self.in_function = False
         self.parse()
-        logging.basicConfig()
+        self.logger = logging.getLogger("Parsher")
 
     def add_command(self, cmd):
         stripped = cmd.strip(WHITE_SPACE_TYPES)
@@ -60,7 +60,6 @@ class BashScript:
                         self.segment_so_far += c
 
                 elif self.in_function:
-                    print self.segment_so_far
                     if c == '}':
                         self.segment_so_far += c
                         self.commands += [self.segment_so_far]
@@ -111,10 +110,10 @@ class BashScript:
                     # we see an escaped char in front...
 
                     if look_ahead_1 == '\\':
-                        logging.debug('lookahead 1 hit')
+                        self.logger.debug('lookahead 1 hit')
                         look_ahead_2 = f.read(1)
                         if look_ahead_2 in '\n':
-                            logging.debug('lookahead 2 hit')
+                            self.logger.debug('lookahead 2 hit')
                             # ok this is the pattern "blah\s\\n"
                             # drop all 3 chars on the floor, we don't need to keep them
                             self.segment_so_far += c
