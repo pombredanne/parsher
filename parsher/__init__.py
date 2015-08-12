@@ -8,6 +8,7 @@ WHITE_SPACE_TYPES = REGULAR_WHITESPACE + NEWLINE_CHARS
 
 class BashScript:
     def __init__(self, path_or_file):
+        self.logger = logging.getLogger("Parsher")
         if hasattr(path_or_file, 'read'):
             self.file = path_or_file
         else:
@@ -22,7 +23,6 @@ class BashScript:
         self.commented = False
         self.in_function = False
         self.parse()
-        self.logger = logging.getLogger("Parsher")
 
     def add_command(self, cmd):
         stripped = cmd.strip(WHITE_SPACE_TYPES)
