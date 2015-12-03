@@ -6,16 +6,36 @@ REGULAR_WHITESPACE = '\t '
 WHITE_SPACE_TYPES = REGULAR_WHITESPACE + NEWLINE_CHARS
 
 
-class BashScript(object):
+class WithVariables(object):
+    def __init__(self):
+        self.variables = []
+
+    def variable(self, name, value):
+        self.variables.append((name, value))
+
+class WithCommands(object):
+    def __init__(self):
+        self.commands = []
+
+    def command(self, name, value):
+        self.commands.append((name, value))
+
+class Buffered(object):
+    def __init__(self):
+        self._buffer = []
+
+    @property
+    def buffer(self):
+        return self._buffer
+
+
+class BashScript(WithVariables, WithCommands, Buffered):
     def __init__(self, path_or_file):
         self.logger = logging.getLogger("Parsher")
         if hasattr(path_or_file, 'read'):
             self._file = path_or_file
         else:
             self._file = open(path_or_file, 'r')
-        self.vars = []
-        self.commands = []
-        self.bufferedChars = []
         self.quoted = False
         self.quoted_type = ''
         self.in_variable_value = False
@@ -27,14 +47,14 @@ class BashScript(object):
     def _add_command(self, cmd):
         stripped = cmd.strip(WHITE_SPACE_TYPES)
         if not stripped == "export":
-            self.commands += [stripped]
+            self.command(stripped)
 
     def _done(self, c):
         # variable assignment on this
         if '=' in self.segment_so_far and self.in_variable_value:
             var_name = self.segment_so_far.split('=', 1)[0]
             var_value = self.segment_so_far.split('=', 1)[1].strip(WHITE_SPACE_TYPES)
-            self.vars += [[var_name, var_value]]
+            self.variable(var_name, var_value)
             self.in_variable_value = False
             self.segment_so_far = ''
         # end of a command
@@ -61,7 +81,7 @@ class BashScript(object):
             elif am_quoted:
                 result += revc
             elif not am_quoted and revc in WHITE_SPACE_TYPES:
-                #      the actual var name   the command preceding that
+                #      the actual variable name   the command preceding that
                 return str_reverse(result), str_reverse(reversed_segment[index + 1:])
             else:
                 result += revc
@@ -69,14 +89,13 @@ class BashScript(object):
 
 
     def parsh(self):
-
         char = ' '
 
         def _handle_various_look_ahead_s__that_we_need():
-            if not self.bufferedChars:
+            if not self.buffer:
                 char = f.read(1)
             else:
-                char = self.bufferedChars.pop(0)
+                char = self.buffer.pop(0)
             if not char:
                 self._done(char)
                 break
@@ -102,7 +121,7 @@ class BashScript(object):
             elif self.in_function:
                 if char == '}':
                     self.segment_so_far += char
-                    self.commands += [self.segment_so_far]
+                    self.command(self.segment_so_far)
                     self.segment_so_far = ''
                     self.in_function = False
                 else:
@@ -126,7 +145,7 @@ class BashScript(object):
                     if look_ahead_2 == '\n':
                         pass
                 else:
-                    self.bufferedChars.append(look_ahead_1)
+                    self.buffer.append(look_ahead_1)
 
                 self.segment_so_far += char
                 self._done(char)
@@ -161,20 +180,20 @@ class BashScript(object):
                         pass
                     else:
                         # we found a pattern "blah \char" odd, but ok ...
-                        self.bufferedChars.append(look_ahead_1)
-                        self.bufferedChars.append(look_ahead_2)
+                        self.buffer.append(look_ahead_1)
+                        self.buffer.append(look_ahead_2)
 
                 elif char in NEWLINE_CHARS:
                     # This is just a newline
                     # Because not quoted and we're not in a variable value, this is probably a command and its done
                     # we keep all the args together, cause reasons...
-                    self.bufferedChars.append(look_ahead_1)
+                    self.buffer.append(look_ahead_1)
                     self._done(char)
                 else:
                     # This is just a space followed by a non newline char
                     # because we're not quoted and we're not in a variable value
                     # we keep all the args together, cause reasons...
-                    self.bufferedChars.append(look_ahead_1)
+                    self.buffer.append(look_ahead_1)
                     self.segment_so_far += char
                 else:
                     self.segment_so_far += char
