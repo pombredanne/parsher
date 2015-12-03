@@ -187,7 +187,6 @@ class BashScript(object):
                 _handle_variable_assignment()
                 _handle_white_space()
 
-§
 def str_reverse(string):
     arr = []
     for each in string:
