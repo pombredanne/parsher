@@ -22,14 +22,14 @@ class BashScript:
         self.segment_so_far = ''
         self.commented = False
         self.in_function = False
-        self.parse()
+        self.parsh()
 
     def add_command(self, cmd):
         stripped = cmd.strip(WHITE_SPACE_TYPES)
         if not stripped == "export":
             self.commands += [stripped]
 
-    def parse(self):
+    def parsh(self):
         with self.file as f:
             while True:
                 # handle various look ahead(s) that we need
